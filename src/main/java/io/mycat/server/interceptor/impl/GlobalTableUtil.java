@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.alibaba.druid.sql.ast.statement.*;
+import com.alibaba.druid.sql.dialect.mysql.parser.MySqlExprParser;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -243,8 +244,13 @@ public class GlobalTableUtil{
 		try{
 			MySqlStatementParser parser = new MySqlStatementParser(sql);	 
 			SQLStatement statement = parser.parseStatement();
-			MySqlInsertStatement insert = (MySqlInsertStatement)statement; 
-	        String tableName = StringUtil.removeBackquote(insert.getTableName().getSimpleName());
+			MySqlInsertStatement insert = (MySqlInsertStatement)statement;
+
+			MySqlExprParser exprParser = parser.getExprParser();
+
+
+
+			String tableName = StringUtil.removeBackquote(insert.getTableName().getSimpleName());
 	        if(!isGlobalTable(tableName))
 				return sql;
 	        if(!isInnerColExist(tableName))
@@ -344,8 +350,14 @@ public class GlobalTableUtil{
 //		List<SQLExpr> columns = insert.getColumns();
 //		System.out.println(columns.size());
 		
-		String sql = "alter table t add colomn name varchar(30)";
-		System.out.println(handleDDLSQL(sql));
+//		String sql = "alter table t add colomn name varchar(30)";
+//		System.out.println(handleDDLSQL(sql));
+
+		String sql = "INSERT INTO `mock_meeting_agenda` (`meeting_id`, `meeting_name`, `agenda_name`, `agenda_id`, `agenda_content`, `status`, `sign_in_addr`, `start_time`, `agenda_process`) VALUES (57, '规眼件', '自低极', '25', 'anim minim et nisi', 42, 'incididunt qui et', 1759624162906, '[{\\\"msgList\\\":[{\\\"textList\\\":[\\\"aliquip incididunt sint ex proident\\\"],\\\"stayTime\\\":5,\\\"ext\\\":\\\"aliquip\\\"},{\\\"textList\\\":[\\\"aute laboris deserunt pariatur\\\",\\\"ut\\\"],\\\"stayTime\\\":5,\\\"ext\\\":\\\"esse et velit Excepteur in\\\"}],\\\"type\\\":13},{\\\"msgList\\\":[{\\\"textList\\\":[\\\"consequat nisi aliquip ipsum\\\"],\\\"stayTime\\\":5,\\\"ext\\\":\\\"aute minim Lorem\\\"}],\\\"type\\\":51}]')";
+
+		convertInsertSQL(sql);
+
+
 	}
 	
 	private static boolean isInnerColExist(String tableName){

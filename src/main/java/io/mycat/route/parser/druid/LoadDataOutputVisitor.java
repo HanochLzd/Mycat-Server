@@ -10,7 +10,7 @@ public class LoadDataOutputVisitor extends MySqlOutputVisitor
 {
     public LoadDataOutputVisitor(Appendable appender)
     {
-        super(appender);
+        super((StringBuilder) appender);
     }
     @Override
     public boolean visit(MySqlLoadDataInFileStatement x) {
