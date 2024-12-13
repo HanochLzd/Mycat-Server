@@ -23,6 +23,7 @@
  */
 package io.mycat.config.loader.xml;
 
+import com.google.common.base.Splitter;
 import io.mycat.backend.datasource.PhysicalDBPool;
 import io.mycat.config.loader.SchemaLoader;
 import io.mycat.config.model.*;
@@ -179,7 +180,7 @@ public class XMLSchemaLoader implements SchemaLoader {
             }
 
             SchemaConfig schemaConfig = new SchemaConfig(name, dataNode,
-                    tables, sqlMaxLimit, "true".equalsIgnoreCase(checkSQLSchemaStr),randomDataNode);
+                    tables, sqlMaxLimit, "true".equalsIgnoreCase(checkSQLSchemaStr), randomDataNode);
 
             //设定DB类型，这对之后的sql语句路由解析有帮助
             if (defaultDbType != null) {
@@ -303,14 +304,14 @@ public class XMLSchemaLoader implements SchemaLoader {
         for (int i = 0; i < nodeList.getLength(); i++) {
             Element tableElement = (Element) nodeList.item(i);
             String tableNameElement = tableElement.getAttribute("name").toUpperCase();
-            if("true".equalsIgnoreCase(tableElement.getAttribute("splitTableNames"))){
+            if ("true".equalsIgnoreCase(tableElement.getAttribute("splitTableNames"))) {
                 String[] split = tableNameElement.split(",");
                 for (String name : split) {
-                    Element node1 = (Element)tableElement.cloneNode(true);
-                    node1.setAttribute("name",name);
+                    Element node1 = (Element) tableElement.cloneNode(true);
+                    node1.setAttribute("name", name);
                     list.add(node1);
                 }
-            }else {
+            } else {
                 list.add(tableElement);
             }
         }
@@ -318,7 +319,7 @@ public class XMLSchemaLoader implements SchemaLoader {
         return tables;
     }
 
-    private void loadTable(String schemaName, Map<String, TableConfig> tables,  List<Element>  nodeList) {
+    private void loadTable(String schemaName, Map<String, TableConfig> tables, List<Element> nodeList) {
         for (int i = 0; i < nodeList.size(); i++) {
             Element tableElement = (Element) nodeList.get(i);
             String tableNameElement = tableElement.getAttribute("name").toUpperCase();
@@ -336,6 +337,11 @@ public class XMLSchemaLoader implements SchemaLoader {
             //记录主键，用于之后路由分析，以及启用自增长主键
             String[] tableNames = tableNameElement.split(",");
             String primaryKey = tableElement.hasAttribute("primaryKey") ? tableElement.getAttribute("primaryKey").toUpperCase() : null;
+            String uniqueIndexStr = tableElement.hasAttribute("uniqueIndex") ? tableElement.getAttribute("uniqueIndex") : null;
+            List<String> uniqueIndex = new ArrayList<>();
+            if (!StringUtil.isEmpty(uniqueIndexStr)) {
+                uniqueIndex = Splitter.on(",").omitEmptyStrings().trimResults().splitToList(uniqueIndexStr);
+            }
             //记录是否主键自增，默认不是，（启用全局sequence handler）
             boolean autoIncrement = false;
             if (tableElement.hasAttribute("autoIncrement")) {
@@ -409,11 +415,14 @@ public class XMLSchemaLoader implements SchemaLoader {
                         autoIncrement, needAddLimit, tableType, dataNode,
                         getDbType(dataNode),
                         (tableRuleConfig != null) ? tableRuleConfig.getRule() : null,
-                        ruleRequired, null, false, null, null, subTables, fetchStoreNodeByJdbc);
+                        ruleRequired, null, false, null, null, subTables,
+                        fetchStoreNodeByJdbc, uniqueIndex);
+
+
                 //因为需要等待TableConfig构造完毕才可以拿到dataNode节点数量,所以Rule构造延后到此处 @cjw
                 if ((tableRuleConfig != null) && (tableRuleConfig.getRule().getRuleAlgorithm() instanceof TableRuleAware)) {
                     AbstractPartitionAlgorithm newRuleAlgorithm = tableRuleConfig.getRule().getRuleAlgorithm();
-                    ((TableRuleAware)newRuleAlgorithm).setTableConfig(table);
+                    ((TableRuleAware) newRuleAlgorithm).setTableConfig(table);
                     newRuleAlgorithm.init();
                 }
                 checkDataNodeExists(table.getDataNodes());
@@ -544,7 +553,7 @@ public class XMLSchemaLoader implements SchemaLoader {
                     autoIncrement, needAddLimit,
                     TableConfig.TYPE_GLOBAL_DEFAULT, dataNodes,
                     getDbType(dataNodes), null, false, parentTable, true,
-                    joinKey, parentKey, subTables, false);
+                    joinKey, parentKey, subTables, false, null);
 
             if (tables.containsKey(table.getName())) {
                 throw new ConfigException("table " + table.getName() + " duplicated!");
@@ -702,7 +711,7 @@ public class XMLSchemaLoader implements SchemaLoader {
         String password = node.getAttribute("password");
         String usingDecrypt = node.getAttribute("usingDecrypt");
         String checkAliveText = node.getAttribute("checkAlive");
-        if (checkAliveText == null)checkAliveText = Boolean.TRUE.toString();
+        if (checkAliveText == null) checkAliveText = Boolean.TRUE.toString();
         boolean checkAlive = Boolean.parseBoolean(checkAliveText);
 
         String passwordEncryty = DecryptUtil.DBHostDecrypt(usingDecrypt, nodeHost, user, password);
@@ -734,7 +743,7 @@ public class XMLSchemaLoader implements SchemaLoader {
             port = url.getPort();
         }
 
-        DBHostConfig conf = new DBHostConfig(nodeHost, ip, port, nodeUrl, user, passwordEncryty, password,checkAlive);
+        DBHostConfig conf = new DBHostConfig(nodeHost, ip, port, nodeUrl, user, passwordEncryty, password, checkAlive);
         conf.setDbType(dbType);
         conf.setMaxCon(maxCon);
         conf.setMinCon(minCon);
@@ -812,11 +821,11 @@ public class XMLSchemaLoader implements SchemaLoader {
                 maxRetryCount = Integer.valueOf(maxRetryCountStr);
             }
             long logTime = "".equals(logTimeStr) ? PhysicalDBPool.LONG_TIME : Long.parseLong(logTimeStr);
-			
-            String notSwitch =  element.getAttribute("notSwitch");
-			if(StringUtil.isEmpty(notSwitch)) {
-				notSwitch = DataHostConfig.CAN_SWITCH_DS;
-			}
+
+            String notSwitch = element.getAttribute("notSwitch");
+            if (StringUtil.isEmpty(notSwitch)) {
+                notSwitch = DataHostConfig.CAN_SWITCH_DS;
+            }
             //读取心跳语句
             String heartbeatSQL = element.getElementsByTagName("heartbeat").item(0).getTextContent();
             //读取 初始化sql配置,用于oracle
@@ -869,7 +878,7 @@ public class XMLSchemaLoader implements SchemaLoader {
             hostConf.setFilters(filters);
             hostConf.setLogTime(logTime);
             hostConf.setSlaveIDs(slaveIDs);
-			hostConf.setNotSwitch(notSwitch);
+            hostConf.setNotSwitch(notSwitch);
             hostConf.setMaxRetryCount(maxRetryCount);
             dataHosts.put(hostConf.getName(), hostConf);
         }

@@ -1,11 +1,12 @@
 package io.mycat.server.interceptor.impl;
 
+import io.mycat.config.model.SchemaConfig;
 import io.mycat.server.interceptor.SQLInterceptor;
 
 public class StatSqlInterceptor implements SQLInterceptor {
 
 	@Override
-	public String interceptSQL(String sql, int sqlType) {
+	public String interceptSQL(String sql, int sqlType, SchemaConfig schemaConfig) {
 		// TODO Auto-generated method stub
 		final int atype = sqlType;
         final String sqls = DefaultSqlInterceptor.processEscape(sql);

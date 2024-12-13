@@ -8,6 +8,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.mycat.config.model.SchemaConfig;
 import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 
 import io.mycat.MycatServer;
@@ -128,7 +129,7 @@ private final class StatisticsSqlRunner implements Runnable {
      * etc
      */
     @Override
-    public String interceptSQL(String sql, int sqlType) {
+    public String interceptSQL(String sql, int sqlType, SchemaConfig schemaConfig) {
         LOGGER.debug("sql interceptSQL:");
         
         final int sqltype = sqlType;

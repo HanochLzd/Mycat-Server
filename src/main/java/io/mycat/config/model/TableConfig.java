@@ -63,10 +63,12 @@ public class TableConfig {
     private volatile Map<String, List<String>> dataNodeTableStructureSQLMap;
     private ReentrantReadWriteLock reentrantReadWriteLock = new ReentrantReadWriteLock(false);
 
+    private final List<String> uniqueIndex;
+
     public TableConfig(String tableName, String primaryKey, boolean autoIncrement, boolean needAddLimit, int tableType,
                        String dataNode, Set<String> dbType, RuleConfig rule, boolean ruleRequired,
                        TableConfig parentTC, boolean isChildTable, String joinKey,
-                       String parentKey, String subTables, boolean fetchStoreNodeByJdbc) {
+                       String parentKey, String subTables, boolean fetchStoreNodeByJdbc, List<String> uniqueIndex) {
         if (tableName == null) {
             throw new IllegalArgumentException("table name is null");
         } else if (dataNode == null) {
@@ -120,6 +122,7 @@ public class TableConfig {
             locateRTableKeySql = null;
             secondLevel = false;
         }
+        this.uniqueIndex = uniqueIndex;
     }
 
     public String getPrimaryKey() {
@@ -310,5 +313,9 @@ public class TableConfig {
 
     public boolean getFetchStoreNodeByJdbc() {
         return this.fetchStoreNodeByJdbc;
+    }
+
+    public List<String> getUniqueIndex() {
+        return uniqueIndex;
     }
 }
