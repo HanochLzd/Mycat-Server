@@ -113,6 +113,16 @@ public class DefaultSqlInterceptor implements SQLInterceptor {
             return sql;
         }
 
+        if (sql.contains("@@session.auto_increment_increment") || sql.contains(" @@character_set_client")) {
+            sql = "select user()";
+            return sql;
+        }
+
+        if ( sql.equalsIgnoreCase("SELECT @@session.transaction_read_only")) {
+            sql = "SELECT 0 as \"@@session.transaction_read_only\"";
+            return sql;
+        }
+
 
         if (sqlType == ServerParse.INSERT) {
             sql = dmInsertSqlConverter.convert(sql, schemaConfig);
