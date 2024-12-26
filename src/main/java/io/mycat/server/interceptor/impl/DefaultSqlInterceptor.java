@@ -96,9 +96,9 @@ public class DefaultSqlInterceptor implements SQLInterceptor {
             sql = sql.replace("\\", "");
         }
 
-        if (sql.equalsIgnoreCase("SELECT @@transaction_isolation")) {
-//            sql = "select case when ISOLATION = 1 then 'READ-COMMITTED ' end AS @@transaction_isolation from v$trx limit 1";
-            sql = "select isolation from v$trx limit 1";
+        if (sql.equalsIgnoreCase("SELECT @@transaction_isolation")
+                || sql.equalsIgnoreCase("SELECT @@session.transaction_isolation")) {
+            sql = "select case when ISOLATION = 1 then 'REPEATABLE-READ' end AS \"@@transaction_isolation\" from v$trx limit 1";
             return sql;
         }
 
@@ -118,7 +118,7 @@ public class DefaultSqlInterceptor implements SQLInterceptor {
             return sql;
         }
 
-        if ( sql.equalsIgnoreCase("SELECT @@session.transaction_read_only")) {
+        if (sql.equalsIgnoreCase("SELECT @@session.transaction_read_only")) {
             sql = "SELECT 0 as \"@@session.transaction_read_only\"";
             return sql;
         }

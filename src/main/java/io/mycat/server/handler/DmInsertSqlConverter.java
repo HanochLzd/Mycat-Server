@@ -15,9 +15,11 @@ import io.mycat.util.CollectionUtil;
 import io.mycat.util.StringUtil;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class DmInsertSqlConverter implements DmSqlHandler {
@@ -83,6 +85,7 @@ public class DmInsertSqlConverter implements DmSqlHandler {
         if (Objects.nonNull(tableConfig)) {
             uniqueIndex = tableConfig.getUniqueIndex();
         }
+        Set<String> uniqueIndexSet = new HashSet<>(uniqueIndex);
 
         // columns
         List<SQLExpr> columnsExpr = mySqlInsertStatement.getColumns();
@@ -102,6 +105,8 @@ public class DmInsertSqlConverter implements DmSqlHandler {
 
         // match update part
         String matchUpdatePart = Joiner.on(", ").join(duplicateKeyUpdates.stream().map(this::getSQLExprValue)
+                // 过滤掉唯一索引的字段，MERGE INTO 不能更新关联条件中的列
+                .filter(item -> !uniqueIndexSet.contains(item))
                 .map(item -> T1 + "." + item + " = " + T2 + "." + item).collect(Collectors.toList()));
 
         return String.format(MERGE_TO_TEMPLATE, tableName, usingPart, onPart, notMatchInsertColumnsPart, notMatchInsertValuesPart, matchUpdatePart);
